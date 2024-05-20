@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.os.Environment;
+import android.security.identity.DocTypeNotSupportedException;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -11,11 +12,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -26,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String FILECONTENT_KEY = "filecontent";
     private static final String FILECONTENTFIELD_KEY = "filecontentfield";
 
+    private int EXTERNAL_STORAGE_PERMISSION_CODE = 23;
     private TextInputEditText fileName;
     private TextInputEditText fileContent;
     private TextView fileContentField;
@@ -86,6 +90,12 @@ public class MainActivity extends AppCompatActivity {
                     e.printStackTrace();
                 }
                 Toast.makeText(getApplicationContext(), "Saved", Toast.LENGTH_SHORT).show();
+
+                File folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+                File file = new File(folder, filename);
+                writeTextData(file, fileContents);
+
             }
         });
 
@@ -187,6 +197,63 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Info added to file", Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void writeTextData(File file, String data) {
+        FileOutputStream fileOutputStream = null;
+        try {
+            fileOutputStream = new FileOutputStream(file);
+            fileOutputStream.write(data.getBytes());
+            Toast.makeText(this, "Done" + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fileOutputStream != null) {
+                try {
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void showPublicData(View view, String filename) {
+        // Accessing the saved data from the downloads folder
+        File folder = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+
+        // geeksData represent the file data that is saved publicly
+        File file = new File(folder, filename);
+        String data = getdata(file);
+        if (data != null) {
+            fileContentField.setText(data);
+        } else {
+            fileContentField.setText("No Data Found");
+        }
+    }
+
+    private String getdata(File myfile) {
+        FileInputStream fileInputStream = null;
+        try {
+            fileInputStream = new FileInputStream(myfile);
+            int i = -1;
+            StringBuffer buffer = new StringBuffer();
+            while ((i = fileInputStream.read()) != -1) {
+                buffer.append((char) i);
+            }
+            return buffer.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (fileInputStream != null) {
+                try {
+                    fileInputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
     }
 
     @Override
